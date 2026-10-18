@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="hi" class="h-full bg-slate-950">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF Unlock & Referral Platform - BSEB 10th</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: { 50: '#eef2ff', 500: '#6366f1', 600: '#4f46e5', 700: '#4338ca' }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="h-full text-slate-100 font-sans antialiased flex flex-col justify-between selection:bg-indigo-500 selection:text-white">
+
+    <!-- Header / Navbar -->
+    <header class="bg-slate-900/80 backdrop-blur-md border-b border-slate-800 sticky top-0 z-50">
+        <div class="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center shadow-lg shadow-indigo-500/30">
+                    <i class="fa-solid fa-graduation-cap text-white text-lg"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-base leading-tight">BSEB 10th Notes</h1>
+                    <p class="text-xs text-slate-400">Telegram PDF Unlock Hub</p>
+                </div>
+            </div>
+            <div id="connectionStatus" class="hidden sm:flex items-center space-x-1.5 text-xs px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span>Connected</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="max-w-4xl mx-auto px-4 py-6 w-full flex-grow">
+
+        <!-- Login / User ID Prompt State (If no user_id in URL) -->
+        <div id="loginPrompt" class="hidden max-w-md mx-auto my-12 bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl text-center">
+            <div class="w-16 h-16 bg-indigo-600/20 text-indigo-400 rounded-2xl flex items-center justify-center mx-auto mb-4 text-2xl border border-indigo-500/30">
+                <i class="fa-brands fa-telegram"></i>
+            </div>
+            <h2 class="text-xl font-bold mb-2">Telegram se Login Karein</h2>
+            <p class="text-sm text-slate-400 mb-6">Apna dashboard access karne ke liye Telegram bot par jaakar apna link click karein ya yahan Telegram User ID darj karein.</p>
+            <div class="space-y-3">
+                <input type="text" id="manualUserId" placeholder="Apni Telegram User ID dalein (e.g. 123456789)" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 text-center">
+                <button onclick="handleManualLogin()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-3 rounded-xl transition shadow-lg shadow-indigo-600/30 text-sm">
+                    Dashboard Kholein
+                </button>
+                <a href="https://t.me/hrrrrrrrrry_bot" target="_blank" class="block w-full bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium py-3 rounded-xl transition text-sm">
+                    <i class="fa-brands fa-telegram mr-2"></i> Bot Kholein (@hrrrrrrrrry_bot)
+                </a>
+            </div>
+        </div>
+
+        <!-- Dashboard Content -->
+        <div id="dashboardContent" class="space-y-6 hidden">
+
+            <!-- User Status & Stats Card -->
+            <div class="bg-gradient-to-br from-slate-900 to-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl relative overflow-hidden">
+                <div class="absolute -right-10 -bottom-10 w-40 h-40 bg-indigo-600/10 rounded-full blur-3xl pointer-events-none"></div>
+                
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
+                    <div>
+                        <div class="text-xs font-semibold uppercase tracking-wider text-indigo-400 mb-1">Welcome Back</div>
+                        <h2 id="userName" class="text-2xl font-bold">Loading...</h2>
+                        <p id="userHandle" class="text-xs text-slate-400">@username</p>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <span id="memberBadge" class="px-3 py-1.5 rounded-xl text-xs font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                            <i class="fa-solid fa-triangle-exclamation mr-1"></i> Checking Channel...
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Stats Grid -->
+                <div class="grid grid-cols-2 gap-3 mb-5">
+                    <div class="bg-slate-950/60 border border-slate-800/80 rounded-xl p-3.5">
+                        <div class="text-xs text-slate-400 mb-1">Verified Direct Referrals</div>
+                        <div id="statReferrals" class="text-2xl font-black text-indigo-400">0</div>
+                    </div>
+                    <div class="bg-slate-950/60 border border-slate-800/80 rounded-xl p-3.5">
+                        <div class="text-xs text-slate-400 mb-1">Unlocked PDFs</div>
+                        <div id="statPdfs" class="text-2xl font-black text-emerald-400">0 / 9</div>
+                    </div>
+                </div>
+
+                <!-- Referral Link Section -->
+                <div class="bg-slate-950 border border-slate-800 rounded-xl p-3 flex items-center justify-between gap-2">
+                    <div class="truncate text-xs text-slate-300 font-mono pl-2" id="referralLinkText">https://t.me/hrrrrrrrrry_bot?start=REF_0</div>
+                    <button onclick="copyReferralLink()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg text-xs font-medium transition flex-shrink-0 flex items-center space-x-1.5 shadow-md shadow-indigo-600/20">
+                        <i class="fa-solid fa-copy"></i>
+                        <span>Copy Link</span>
+                    </button>
+                </div>
+
+                <!-- Verify Button -->
+                <div class="mt-4 flex items-center justify-between">
+                    <p class="text-xs text-slate-400">Channel join karne ke baad verification button dabayein.</p>
+                    <button onclick="verifyMembership()" id="verifyBtn" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-xl text-xs font-semibold transition flex items-center space-x-1.5 shadow-lg shadow-emerald-600/20">
+                        <i class="fa-solid fa-rotate"></i>
+                        <span>Verify & Update</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- PDF Library Section -->
+            <div>
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-bold flex items-center space-x-2">
+                        <i class="fa-solid fa-book-open text-indigo-400"></i>
+                        <span>9 Educational PDFs Library</span>
+                    </h3>
+                    <span class="text-xs text-slate-400">1 Referral = 1 PDF Unlocked</span>
+                </div>
+
+                <!-- PDF Cards Grid -->
+                <div id="pdfGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <!-- Dynamic PDF Cards will render here -->
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Loading State -->
+        <div id="loadingState" class="py-20 text-center">
+            <div class="inline-block w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mb-4"></div>
+            <p class="text-sm text-slate-400">Dashboard load ho raha hai...</p>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-slate-900 border-t border-slate-800 mt-12 py-6 text-center text-xs text-slate-500">
+        <p>&copy; 2026 BSEB 10th PDF Unlock Platform. All rights reserved.</p>
+        <p class="mt-1">Powered by Render & Telegram Bot API</p>
+    </footer>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-5 right-5 bg-slate-900 border border-slate-700 text-slate-100 px-4 py-3 rounded-xl shadow-2xl transform translate-y-20 opacity-0 transition-all duration-300 z-50 flex items-center space-x-3 text-sm">
+        <i id="toastIcon" class="fa-solid fa-circle-check text-emerald-400"></i>
+        <span id="toastMessage">Success message</span>
+    </div>
+
+    <!-- JavaScript Logic -->
+    <script>
+        // Render Backend URL (Aap isko apne Render URL se replace kar sakte hain)
+        const BACKEND_URL = 'https://book-referal.onrender.com';
+
+        // Get user_id from URL query params
+        const urlParams = new URLSearchParams(window.location.search);
+        let userId = urlParams.get('user_id') || localStorage.getItem('telegram_user_id');
+
+        window.addEventListener('DOMContentLoaded', () => {
+            if (userId) {
+                loadDashboard(userId);
+            } else {
+                document.getElementById('loadingState').classList.add('hidden');
+                document.getElementById('loginPrompt').classList.remove('hidden');
+            }
+        });
+
+        function handleManualLogin() {
+            const inputVal = document.getElementById('manualUserId').value.trim();
+            if (!inputVal) {
+                showToast('Kripya valid Telegram User ID dalein', 'error');
+                return;
+            }
+            localStorage.setItem('telegram_user_id', inputVal);
+            userId = inputVal;
+            document.getElementById('loginPrompt').classList.add('hidden');
+            document.getElementById('loadingState').classList.remove('hidden');
+            loadDashboard(userId);
+        }
+
+        async function loadDashboard(uid) {
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/me/dashboard?user_id=${uid}`);
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'User not found');
+                }
+
+                renderDashboardData(data);
+                document.getElementById('loadingState').classList.add('hidden');
+                document.getElementById('dashboardContent').classList.remove('hidden');
+            } catch (error) {
+                console.error(error);
+                document.getElementById('loadingState').classList.add('hidden');
+                document.getElementById('loginPrompt').classList.remove('hidden');
+                showToast('User nahi mila. Kripya bot se dobara link kholein.', 'error');
+                localStorage.removeItem('telegram_user_id');
+            }
+        }
+
+        function renderDashboardData(data) {
+            const user = data.user;
+            document.getElementById('userName').innerText = user.first_name || 'Student';
+            document.getElementById('userHandle').innerText = user.username ? `@${user.username}` : `ID: ${user.telegram_id}`;
+            document.getElementById('statReferrals').innerText = user.verified_referrals;
+            document.getElementById('statPdfs').innerText = `${user.unlocked_pdfs_count} / 9`;
+            document.getElementById('referralLinkText').innerText = user.referral_link;
+
+            // Channel Membership Badge
+            const badge = document.getElementById('memberBadge');
+            if (user.is_channel_member) {
+                badge.className = 'px-3 py-1.5 rounded-xl text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20';
+                badge.innerHTML = '<i class="fa-solid fa-circle-check mr-1"></i> Channel Joined';
+            } else {
+                badge.className = 'px-3 py-1.5 rounded-xl text-xs font-medium bg-rose-500/10 text-rose-400 border border-rose-500/20';
+                badge.innerHTML = '<i class="fa-solid fa-circle-xmark mr-1"></i> Not Joined Channel';
+            }
+
+            // Render PDFs Grid
+            const grid = document.getElementById('pdfGrid');
+            grid.innerHTML = '';
+
+            data.pdfs.forEach(pdf => {
+                const isUnlocked = pdf.is_unlocked;
+                const card = document.createElement('div');
+                card.className = `border rounded-2xl p-4 flex flex-col justify-between transition ${isUnlocked ? 'bg-slate-900 border-emerald-500/30 shadow-lg shadow-emerald-500/5' : 'bg-slate-900/50 border-slate-800 opacity-75'}`;
+                
+                card.innerHTML = `
+                    <div>
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs font-semibold px-2.5 py-1 rounded-lg ${isUnlocked ? 'bg-emerald-500/10 text-emerald-400' : 'bg-slate-800 text-slate-400'}">
+                                ${pdf.subject}
+                            </span>
+                            <span class="text-xs font-mono text-slate-400">Req: ${pdf.required_referrals} Ref</span>
+                        </div>
+                        <h4 class="font-bold text-sm mb-3">${pdf.title}</h4>
+                    </div>
+                    <div>
+                        ${isUnlocked ? 
+                            `<a href="${pdf.download_url}" target="_blank" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-medium py-2 px-3 rounded-xl text-xs flex items-center justify-center space-x-1.5 transition shadow-md shadow-emerald-600/20">
+                                <i class="fa-solid fa-download"></i>
+                                <span>Download PDF</span>
+                            </a>` :
+                            `<div class="w-full bg-slate-800/80 text-slate-400 font-medium py-2 px-3 rounded-xl text-xs flex items-center justify-center space-x-1.5 cursor-not-allowed">
+                                <i class="fa-solid fa-lock"></i>
+                                <span>Locked (${pdf.required_referrals} Referrals Needed)</span>
+                            </div>`
+                        }
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        async function verifyMembership() {
+            const btn = document.getElementById('verifyBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner animate-spin mr-1"></i> Verifying...';
+
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/referrals/verify`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: userId })
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    showToast(result.message, 'success');
+                    loadDashboard(userId);
+                } else {
+                    showToast(result.message || 'Verification failed', 'error');
+                }
+            } catch (e) {
+                showToast('Server connection error', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-rotate"></i><span>Verify & Update</span>';
+            }
+        }
+
+        function copyReferralLink() {
+            const linkText = document.getElementById('referralLinkText').innerText;
+            navigator.clipboard.writeText(linkText);
+            showToast('Referral link copied to clipboard!', 'success');
+        }
+
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toastMessage');
+            const toastIcon = document.getElementById('toastIcon');
+
+            toastMsg.innerText = message;
+            if (type === 'success') {
+                toastIcon.className = 'fa-solid fa-circle-check text-emerald-400';
+            } else {
+                toastIcon.className = 'fa-solid fa-triangle-exclamation text-rose-400';
+            }
+
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
