@@ -1,214 +1,637 @@
-<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html><html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="theme-color" content="#0b1020" />
-  <title>Study PDF Unlock Dashboard</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
-  <style>
-    body { background: radial-gradient(1200px 600px at 10% -10%, #1e2a6b55, transparent), radial-gradient(900px 500px at 110% 10%, #7c3aed44, transparent), #0b1020; min-height: 100vh; }
-    .glass { background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.12); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
-    .btn { transition: transform .12s ease, opacity .2s; }
-    .btn:active { transform: scale(.97); }
-    .btn[disabled] { opacity: .6; pointer-events: none; }
-    @keyframes shimmer { 0%{opacity:.4} 50%{opacity:.8} 100%{opacity:.4} }
-    .skeleton { animation: shimmer 1.4s infinite; background: rgba(255,255,255,.08); border-radius: 1rem; }
-  </style>
-</head>
-<body class="text-slate-100 font-sans antialiased pb-10">
-  <main class="max-w-md mx-auto px-4 pt-6 space-y-4" id="app">
-    <div class="skeleton h-28"></div>
-    <div class="skeleton h-24"></div>
-    <div class="skeleton h-40"></div>
-  </main>
-
-  <div id="toast" class="fixed left-1/2 -translate-x-1/2 bottom-6 px-4 py-2 rounded-full bg-slate-900/95 border border-white/15 text-sm opacity-0 pointer-events-none transition-opacity duration-300 z-50"></div>
-
-<script>
-/* ---- CONFIG: set this to your Render backend URL (no trailing slash) ---- */
-const BACKEND_URL = "https://YOUR-RENDER-SERVICE.onrender.com";
-const BOT_URL = "https://t.me/hrrrrrrrrry_bot";
-/* ------------------------------------------------------------------------ */
-
-const app = document.getElementById('app');
-const toastEl = document.getElementById('toast');
-let state = null;
-let session = null;
-
-const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-function toast(msg) {
-  toastEl.textContent = msg; toastEl.style.opacity = 1;
-  clearTimeout(toast.t); toast.t = setTimeout(() => (toastEl.style.opacity = 0), 2600);
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0b1020"><title>Student Dashboard</title><style>
+:root {
+  --bg: #0b1020;
+  --panel: #151e33;
+  --border: #2b3853;
+  --text: #f4f7ff;
+  --muted: #a1aec7;
+  --accent: #8b9dff;
+  --green: #45d6a0;
 }
 
-function loadSession() {
-  const p = new URLSearchParams(location.search);
-  const uid = p.get('user_id'), sig = p.get('sig');
-  try {
-    if (uid && sig) {
-      localStorage.setItem('user_id', uid);
-      localStorage.setItem('sig', sig);
-      history.replaceState(null, '', location.pathname); // keep the signed link out of the address bar
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background:
+    radial-gradient(
+      ellipse at top right,
+      #1b2b52,
+      transparent 45%
+    ),
+    var(--bg);
+  color: var(--text);
+  font-family: Inter, system-ui, sans-serif;
+  min-height: 100vh;
+}
+
+.container {
+  width: min(1100px, calc(100% - 30px));
+  margin: auto;
+  padding: 30px 0 50px;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 28px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.logo {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 15px;
+  background: linear-gradient(135deg, #8b9dff, #6655d8);
+  font-size: 23px;
+}
+
+.brand h1 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.brand p {
+  margin: 3px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.badge {
+  padding: 7px 12px;
+  border: 1px solid var(--border);
+  border-radius: 50px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.hero {
+  display: grid;
+  grid-template-columns: 1.2fr .8fr;
+  gap: 25px;
+  padding: clamp(22px, 4vw, 38px);
+  border: 1px solid #344264;
+  border-radius: 25px;
+  background: linear-gradient(120deg, #1b2947, #131b2e);
+}
+
+.eyebrow {
+  color: #aab6ff;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .15em;
+  text-transform: uppercase;
+}
+
+.hero h2 {
+  margin: 13px 0;
+  font-size: clamp(28px, 4vw, 39px);
+  line-height: 1.15;
+}
+
+.hero p {
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+.referral {
+  display: flex;
+  gap: 10px;
+  margin-top: 23px;
+}
+
+input {
+  min-width: 0;
+  flex: 1;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #0c1426;
+  color: white;
+}
+
+button,
+.download {
+  padding: 12px 16px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--accent);
+  color: #0b1020;
+  font-weight: 800;
+  cursor: pointer;
+  text-decoration: none;
+  text-align: center;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
+.stats {
+  align-self: center;
+  padding: 23px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: #0b1326;
+}
+
+.stat-line {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.stat-line span {
+  color: var(--muted);
+}
+
+.stat-line strong {
+  font-size: 27px;
+}
+
+.progress {
+  height: 9px;
+  margin: 17px 0 10px;
+  overflow: hidden;
+  border-radius: 50px;
+  background: #293550;
+}
+
+.progress-fill {
+  width: 0;
+  height: 100%;
+  border-radius: 50px;
+  background: linear-gradient(90deg, #8798ff, #45d6a0);
+  transition: width .3s;
+}
+
+.small {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.section-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 15px;
+  margin: 34px 0 17px;
+}
+
+.section-title h3 {
+  margin: 0;
+  font-size: 22px;
+}
+
+.section-title p {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 15px;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+  min-height: 180px;
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: 19px;
+  background: linear-gradient(145deg, #172139, #11192b);
+}
+
+.card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.subject-icon {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 13px;
+  background: #283657;
+  font-size: 19px;
+}
+
+.status {
+  padding: 5px 9px;
+  border-radius: 30px;
+  background: #2a3348;
+  color: #c4cde0;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.status.unlocked {
+  background: #123c35;
+  color: #6ef0bc;
+}
+
+.card h4 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.card p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.card .download,
+.card .locked {
+  display: block;
+  width: 100%;
+  margin-top: auto;
+}
+
+.card .locked {
+  background: #283248;
+  color: #aab5c9;
+}
+
+.message {
+  margin: 20px 0;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 15px;
+  background: var(--panel);
+  color: var(--muted);
+}
+
+.error {
+  color: #ffb7b7;
+}
+
+.hidden {
+  display: none !important;
+}
+
+.footer {
+  margin-top: 30px;
+  text-align: center;
+  color: #77849e;
+  font-size: 12px;
+}
+
+@media (max-width: 800px) {
+  .hero {
+    grid-template-columns: 1fr;
+  }
+
+  .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 520px) {
+  .container {
+    width: calc(100% - 22px);
+    padding-top: 20px;
+  }
+
+  .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .referral {
+    flex-direction: column;
+  }
+
+  .header {
+    align-items: flex-start;
+  }
+
+  .section-title {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+</style></head><body>
+<main class="container"><header class="header">
+  <div class="brand">
+    <div class="logo">✦</div>
+    <div>
+      <h1>Student Dashboard</h1>
+      <p>Learning resources and referral rewards</p>
+    </div>
+  </div>  <span class="badge" id="membership">
+    Checking membership…
+  </span>
+</header><div class="message" id="loading">
+  Loading your dashboard securely…
+</div><div
+  class="message error hidden"
+  id="error"
+  role="alert"
+></div><section id="dashboard" class="hidden">  <div class="hero"><div>
+  <div class="eyebrow">Your learning space</div>
+
+  <h2>
+    Welcome,
+    <span id="name">Student</span> 👋
+  </h2>
+
+  <p>
+    Invite friends using your personal referral link.
+    Unlock subject PDFs as your verified direct referrals grow.
+  </p>
+
+  <div class="referral">
+    <input
+      id="referralLink"
+      readonly
+      aria-label="Your referral link"
+    >
+
+    <button id="copyButton" type="button">
+      Copy Link
+    </button>
+  </div>
+
+  <div
+    class="small"
+    id="copyMessage"
+    aria-live="polite"
+  ></div>
+</div>
+
+<aside class="stats">
+
+  <div class="stat-line">
+    <span>Direct referrals</span>
+
+    <strong>
+      <span id="count">0</span>
+      <span style="font-size:15px;color:#95a2bd">
+        / 9
+      </span>
+    </strong>
+  </div>
+
+  <div
+    class="progress"
+    role="progressbar"
+    aria-label="Referral progress"
+    aria-valuemin="0"
+    aria-valuemax="9"
+    aria-valuenow="0"
+    id="progress"
+  >
+    <div
+      class="progress-fill"
+      id="progressFill"
+    ></div>
+  </div>
+
+  <div class="small" id="progressText">
+    0 of 9 referrals completed
+  </div>
+
+</aside>
+
+  </div>  <div class="section-title">
+    <div>
+      <h3>Your Subject Library</h3>
+      <p>
+        Each PDF unlocks at its required referral milestone.
+      </p>
+    </div><span class="badge" id="unlockedCount">
+  0 / 9 unlocked
+</span>
+
+  </div>  <div class="grid" id="subjects"></div></section><footer class="footer">
+  Keep your personal dashboard link private.
+  Dashboard links expire automatically.
+</footer></main><script>
+(() => {
+  'use strict';
+
+  const token =
+    new URLSearchParams(location.search).get('token');
+
+  const $ = id => document.getElementById(id);
+
+  const icons = [
+    '📊',
+    '⚛️',
+    '🏛️',
+    '📜',
+    '📐',
+    '🧪',
+    '🧬',
+    '🕉️',
+    '📚'
+  ];
+
+  function showError(message) {
+    $('loading').classList.add('hidden');
+    $('error').textContent = message;
+    $('error').classList.remove('hidden');
+  }
+
+  if (!token) {
+    showError(
+      'Dashboard token missing. Open your dashboard using the button sent by the Telegram bot.'
+    );
+
+    return;
+  }
+
+  // Keep the signed token in session storage for this tab.
+  sessionStorage.setItem('dashboardToken', token);
+
+  // Remove the token from the visible URL after reading it.
+  history.replaceState(
+    {},
+    document.title,
+    location.pathname
+  );
+
+  async function loadDashboard() {
+    const response = await fetch(
+      '/api/user-data',
+      {
+        headers: {
+          'x-dashboard-token': token
+        },
+        cache: 'no-store'
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(
+        data.error || 'Unable to load dashboard.'
+      );
     }
-    const u = localStorage.getItem('user_id'), s = localStorage.getItem('sig');
-    return u && s ? { user_id: u, sig: s } : null;
-  } catch (_) {
-    return uid && sig ? { user_id: uid, sig } : null;
-  }
-}
 
-async function api(path, opts) {
-  const r = await fetch(BACKEND_URL + path, opts);
-  const data = await r.json().catch(() => ({}));
-  if (!r.ok) { const e = new Error(data.message || data.error || 'Request failed'); e.status = r.status; throw e; }
-  return data;
-}
+    $('name').textContent =
+      data.first_name || 'Student';
 
-function renderMessage(icon, title, text) {
-  app.innerHTML = `
-    <section class="glass rounded-3xl p-8 text-center mt-16">
-      <div class="text-4xl mb-3 text-indigo-300"><i class="fa-solid ${icon}"></i></div>
-      <h1 class="text-lg font-semibold mb-1">${esc(title)}</h1>
-      <p class="text-slate-300 text-sm mb-5">${esc(text)}</p>
-      <a href="${BOT_URL}" class="btn inline-block px-5 py-3 rounded-2xl bg-gradient-to-r from-indigo-500 to-violet-500 font-semibold"><i class="fa-brands fa-telegram mr-2"></i>Open the Bot</a>
-    </section>`;
-}
+    $('count').textContent =
+      data.referral_count;
 
-function render() {
-  const d = state;
-  const pct = Math.round((d.unlockedCount / d.totalPdfs) * 100);
-  const next = d.pdfs.find((p) => !p.unlocked);
-  const handle = d.user.username ? '@' + d.user.username : 'ID ' + d.user.id;
+    $('referralLink').value =
+      data.referral_link;
 
-  app.innerHTML = `
-    <section class="glass rounded-3xl p-5">
-      <div class="flex items-center gap-4">
-        <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-fuchsia-500 flex items-center justify-center text-2xl font-bold shadow-lg">${esc(d.user.avatarLetter)}</div>
-        <div class="min-w-0 flex-1">
-          <h1 class="text-lg font-bold truncate">${esc(d.user.name)}</h1>
-          <p class="text-slate-400 text-sm truncate">${esc(handle)}</p>
-          <span class="inline-flex items-center gap-1 mt-1 text-xs px-2 py-1 rounded-full ${d.channel.verified ? 'bg-emerald-500/20 text-emerald-300' : 'bg-amber-500/20 text-amber-300'}">
-            <i class="fa-solid ${d.channel.verified ? 'fa-circle-check' : 'fa-circle-exclamation'}"></i>
-            ${d.channel.verified ? 'Channel member' : 'Not verified'}
-          </span>
-        </div>
-      </div>
-      <div class="grid grid-cols-2 gap-3 mt-5">
-        <div class="rounded-2xl bg-white/5 p-3 text-center">
-          <div class="text-2xl font-extrabold">${d.referrals.verified}</div>
-          <div class="text-xs text-slate-400"><i class="fa-solid fa-user-check mr-1"></i>Verified referrals</div>
-        </div>
-        <div class="rounded-2xl bg-white/5 p-3 text-center">
-          <div class="text-2xl font-extrabold">${d.unlockedCount} / ${d.totalPdfs}</div>
-          <div class="text-xs text-slate-400"><i class="fa-solid fa-lock-open mr-1"></i>PDFs unlocked</div>
-        </div>
-      </div>
-      <div class="mt-4">
-        <div class="h-2 rounded-full bg-white/10 overflow-hidden"><div class="h-full rounded-full bg-gradient-to-r from-indigo-400 to-fuchsia-400" style="width:${pct}%"></div></div>
-        <p class="text-xs text-slate-400 mt-2">${next ? `${next.remaining} more referral${next.remaining > 1 ? 's' : ''} to unlock ${esc(next.subject)}` : '🏆 Everything unlocked!'}</p>
-      </div>
-    </section>
+    $('membership').textContent =
+      data.joined_channel
+        ? '✓ Channel verified'
+        : 'Membership not verified';
 
-    ${d.channel.verified ? '' : `
-    <section class="glass rounded-3xl p-5">
-      <h2 class="font-semibold mb-1"><i class="fa-brands fa-telegram mr-2 text-sky-300"></i>Join our channel</h2>
-      <p class="text-sm text-slate-300 mb-3">Join the channel, then tap verify. Your own referrer is only credited after you verify.</p>
-      <div class="grid grid-cols-2 gap-3">
-        <a href="${esc(d.channel.url)}" target="_blank" rel="noopener" class="btn text-center py-3 rounded-2xl bg-sky-500/20 border border-sky-400/30 font-medium">Join Channel</a>
-        <button id="verifyBtn" class="btn py-3 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 font-semibold"><i class="fa-solid fa-shield-check mr-1"></i>Verify Membership</button>
-      </div>
-    </section>`}
+    const target = data.referral_target || 9;
 
-    <section class="glass rounded-3xl p-5">
-      <h2 class="font-semibold mb-1"><i class="fa-solid fa-link mr-2 text-violet-300"></i>Your referral link</h2>
-      <p class="text-xs text-slate-400 mb-3">Each friend who starts the bot and joins the channel = +1 referral.</p>
-      <div class="rounded-2xl bg-black/30 border border-white/10 px-3 py-3 text-xs break-all select-all" id="refLink">${esc(d.referrals.link)}</div>
-      <div class="grid grid-cols-2 gap-3 mt-3">
-        <button id="copyBtn" class="btn py-3 rounded-2xl bg-white/10 border border-white/15 font-medium"><i class="fa-regular fa-copy mr-1"></i>Copy</button>
-        <button id="shareBtn" class="btn py-3 rounded-2xl bg-gradient-to-r from-indigo-500 to-violet-500 font-semibold"><i class="fa-solid fa-share-nodes mr-1"></i>Share</button>
-      </div>
-      ${d.channel.verified ? `<button id="verifyBtn" class="btn w-full mt-3 py-2.5 rounded-2xl bg-white/5 border border-white/10 text-sm text-slate-300"><i class="fa-solid fa-rotate mr-1"></i>Re-check membership</button>` : ''}
-    </section>
+    const progress = Math.min(
+      100,
+      Math.round(
+        data.referral_count / target * 100
+      )
+    );
 
-    <section>
-      <h2 class="font-semibold mb-3 px-1"><i class="fa-solid fa-book-open mr-2 text-fuchsia-300"></i>PDF Library</h2>
-      <div class="grid grid-cols-2 gap-3">
-        ${d.pdfs.map((p) => p.unlocked ? `
-          <div class="glass rounded-2xl p-4 border-emerald-400/30">
-            <span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300">PDF ${p.id}</span>
-            <div class="mt-2 font-semibold">${esc(p.subject)}</div>
-            <div class="text-xs text-emerald-300 mb-3"><i class="fa-solid fa-lock-open mr-1"></i>Unlocked</div>
-            <a href="${esc(p.url)}" target="_blank" rel="noopener" class="btn block text-center py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-sm font-semibold"><i class="fa-solid fa-download mr-1"></i>Download</a>
-          </div>` : `
-          <div class="glass rounded-2xl p-4 opacity-80">
-            <span class="text-[10px] px-2 py-0.5 rounded-full bg-white/10 text-slate-300">PDF ${p.id}</span>
-            <div class="mt-2 font-semibold">${esc(p.subject)}</div>
-            <div class="text-xs text-slate-400 mb-3"><i class="fa-solid fa-lock mr-1"></i>Needs ${p.required} referral${p.required > 1 ? 's' : ''}</div>
-            <div class="text-center py-2 rounded-xl bg-white/5 text-xs text-slate-300">${p.remaining} more to go</div>
-          </div>`).join('')}
-      </div>
-    </section>
-    <p class="text-center text-xs text-slate-500 pt-2">Referrals are single-level: only friends you invite directly count.</p>`;
+    $('progressFill').style.width =
+      progress + '%';
 
-  document.getElementById('copyBtn').onclick = copyLink;
-  document.getElementById('shareBtn').onclick = shareLink;
-  const vb = document.getElementById('verifyBtn');
-  if (vb) vb.onclick = verify;
-}
+    $('progress').setAttribute(
+      'aria-valuenow',
+      String(Math.min(data.referral_count, target))
+    );
 
-async function copyLink() {
-  try { await navigator.clipboard.writeText(state.referrals.link); toast('Link copied'); }
-  catch (_) {
-    const r = document.createRange(); r.selectNodeContents(document.getElementById('refLink'));
-    const s = getSelection(); s.removeAllRanges(); s.addRange(r); toast('Press and hold to copy');
-  }
-}
+    $('progressText').textContent =
+      `${Math.min(data.referral_count, target)} of ${target} referrals completed · ${progress}%`;
 
-async function shareLink() {
-  const link = state.referrals.link;
-  const data = { title: 'Free Study PDFs', text: 'Get free educational PDFs! Join using my link:', url: link };
-  if (navigator.share) {
-    try { await navigator.share(data); } catch (e) { if (e.name !== 'AbortError') copyLink(); }
-  } else copyLink();
-}
+    const unlockedSubjects =
+      data.subjects.filter(subject => subject.unlocked);
 
-async function verify() {
-  const btn = document.getElementById('verifyBtn');
-  const original = btn.innerHTML;
-  btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i>Checking…';
-  try {
-    const res = await api('/api/referrals/verify', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(session),
+    $('unlockedCount').textContent =
+      `${unlockedSubjects.length} / ${data.subjects.length} unlocked`;
+
+    const grid = $('subjects');
+
+    grid.replaceChildren();
+
+    data.subjects.forEach((subject, index) => {
+      const card = document.createElement('article');
+
+      card.className = 'card';
+
+      const top = document.createElement('div');
+
+      top.className = 'card-top';
+
+      const icon = document.createElement('div');
+
+      icon.className = 'subject-icon';
+
+      icon.textContent = icons[index] || '📘';
+
+      icon.setAttribute('aria-hidden', 'true');
+
+      const status = document.createElement('span');
+
+      status.className =
+        'status' + (subject.unlocked ? ' unlocked' : '');
+
+      status.textContent =
+        subject.unlocked
+          ? '🔓 Unlocked'
+          : '🔒 Locked';
+
+      top.append(icon, status);
+
+      const title = document.createElement('h4');
+
+      title.textContent = subject.name;
+
+      const description = document.createElement('p');
+
+      description.textContent = subject.unlocked
+        ? 'Your PDF is ready to access.'
+        : `Requires ${subject.required_referrals} verified direct referral${subject.required_referrals === 1 ? '' : 's'}.`;
+
+      let action;
+
+      if (subject.unlocked && subject.download_url) {
+        action = document.createElement('a');
+
+        action.className = 'download';
+
+        action.href = subject.download_url;
+
+        action.textContent = 'Download PDF ↗';
+      } else {
+        action = document.createElement('button');
+
+        action.className = 'locked';
+
+        action.textContent = '🔒 Locked';
+
+        action.disabled = true;
+      }
+
+      card.append(
+        top,
+        title,
+        description,
+        action
+      );
+
+      grid.append(card);
     });
-    if (res.status === 'verified') {
-      state = res.dashboard; render(); toast('Membership verified ✅');
-    } else if (res.status === 'not_member') {
-      state = res.dashboard; render(); toast('Join the channel first, then verify');
-    }
-  } catch (e) {
-    toast(e.status === 429 ? 'Please wait a moment…' : e.message || 'Verification failed');
-    btn.disabled = false; btn.innerHTML = original;
-  }
-}
 
-async function init() {
-  session = loadSession();
-  if (!session) return renderMessage('fa-robot', 'Open from the bot', 'Start the Telegram bot and tap “Open Web Dashboard” to sign in automatically.');
-  try {
-    state = await api(`/api/me/dashboard?user_id=${encodeURIComponent(session.user_id)}&sig=${encodeURIComponent(session.sig)}`);
-    render();
-  } catch (e) {
-    if (e.status === 401 || e.status === 404 || e.status === 400) {
-      try { localStorage.removeItem('user_id'); localStorage.removeItem('sig'); } catch (_) {}
-      renderMessage('fa-link-slash', 'Session not valid', 'Please open the dashboard again from the bot.');
-    } else {
-      renderMessage('fa-triangle-exclamation', 'Server is waking up', 'The server may be starting. Please reload in a few seconds.');
-    }
+    $('loading').classList.add('hidden');
+
+    $('dashboard').classList.remove('hidden');
   }
-}
-init();
-</script>
-</body>
+
+  $('copyButton').addEventListener(
+    'click',
+    async () => {
+      try {
+        await navigator.clipboard.writeText(
+          $('referralLink').value
+        );
+
+        $('copyMessage').textContent =
+          'Referral link copied successfully!';
+      } catch {
+        $('referralLink').select();
+
+        $('copyMessage').textContent =
+          'Select and copy your referral link manually.';
+      }
+    }
+  );
+
+  loadDashboard().catch(error => {
+    showError(error.message);
+  });
+})();
+</script></body>
 </html>
